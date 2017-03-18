@@ -1,0 +1,228 @@
+——Git 安装&配置
+$ git config --global user.name "Your Name"
+$ git config --global user.email "email@example.com"
+1)自报家门：你的名字和Email地址。
+2)--global参数，表示机器上所有Git仓库都使用这个配置，当然也可以对某个仓库指定不同的用户名和Email地址。
+
+——Git 创建版本库(repository)
+$ mkdir learngit
+$ cd learngit
+$ pwd
+1)创建一个空目录
+
+$ git init
+Initialized empty Git repository in /Users/michael/learngit/.git/
+1)把这个目录变成Git可以管理的仓库
+
+%ls -ah
+1)可以看见隐藏的新建的.git目录（跟踪管理版本库，勿动！）
+
+——Git 基本操作
+____添加文件到版本库
+$ git add *.txt	
+1)把文件添加到仓库暂存区
+$ git commit -m "instructions"
+1)commit可以一次提交多个不同的文件，暂存区所有内容提交到当前分支
+
+$ git status
+1)掌握工作区的状态 
+
+$ git diff readme.txt 
+1)查看difference
+$ git diff HEAD -- readme.txt 
+1)查看工作区和版本库里面最新版本的区别
+
+$ git log
+1)显示从最近到最远的提交日志（英文状态下按Q退出）
+2)加上--pretty=oneline参数,简单显示
+
+____文件回退
+$ git reset --hard HEAD^
+1)HEAD表示当前版本，上一个版本是HEAD^，上上一个版本是HEAD^^，HEAD~100为上100个版本
+$ cat *.txt
+1)看*.txt的内容
+
+$ git reflog
+1)记录每一次命令,含commit id
+
+____工作区&暂存区
+工作区（Working Directory）:电脑里能看到的目录，比如learngit文件夹就是一个工作区
+版本库（Repository）：工作区隐藏目录.git，Git的版本库有stage（或叫index）暂存区，还有自动创建的master分支，以及指向 		      master的一个指针叫HEAD。
+
+____撤销修改
+$ git checkout -- readme.txt
+1)直接丢弃工作区的修改
+$ git reset HEAD readme.txt
+1)把暂存区的修改撤销掉（unstage），重新放回工作区
+
+____删除文件
+$ git rm test.txt
+1)从版本库中删除该文件
+$ git commit -m "remove test.txt"
+1)提交删除记录
+$ git checkout -- test.txt
+1)文件管理器/工作区中文件误删，从版本库恢复
+
+——Git 远程库
+本地库--->远程库：
+在本地创建了一个Git仓库后，在GitHub创建一个Git仓库，让这两个仓库进行远程同步
+$ git remote add origin git@github.com:YOURID/REPONAME.git
+1）关联本地库、远程库
+$ git push -u origin master
+1）把本地库的所有内容推送到远程库上
+2）加上了-u参数，Git不但会把本地的master分支内容推送的远程新的master分支，还会把本地的master分支和远程的master分支关联起来，在以后的推送或者拉取时就可以简化命令。
+3）2）之后用$ git push origin master即可
+
+远程库--->本地库：
+$ git clone git@github.com:YOURID/REPONAME.git
+
+——Git 分支管理
+____分支 创建&合并
+Git主分支即master分支，HEAD指向master，master指向提交的；HEAD指向的是当前分支。
+创建新的分支(如dev)时,新建指针叫dev，指向master相同的提交，再把HEAD指向dev，表示当前分支在dev上；
+现在开始，对工作区的修改和提交就是针对dev分支了，比如新提交一次后，dev指针往前移动一步，而master指针不变：
+在dev上工作完成，可以把dev合并到master上。合并分支最简单的方法，是把master指向dev的当前提交，就完成了合并：
+合并完分支后，可以删除dev分支，就是把dev指针给删掉，删掉后，我们就剩下了一条master分支。
+$ git checkout -b dev
+1）-b参数表示创建并切换，相当于$ git branch dev $ git checkout dev
+$ git branch
+1）查看当前分支，当前分支前面会标一个*号。
+$ git checkout master
+1）切换回master分支
+$ git merge dev
+1）合并指定分支(dev)到当前分支(master)。
+$ git branch -d dev
+1）删除dev分支
+查看分支：git branch
+
+创建分支：git branch <name>
+
+切换分支：git checkout <name>
+
+创建+切换分支：git checkout -b <name>
+
+合并某分支到当前分支：git merge <name>
+
+删除分支：git branch -d <name>
+
+____分支 解决冲突
+分出不同分支修改之后合并，会发生冲突，git status可以告诉我们冲突的文件；
+修改冲突文件后，再提交
+$ git log --graph --pretty=oneline --abbrev-commit
+1）看到分支的合并情况
+
+____分支 管理策略
+$ git merge --no-ff -m "merge with no-ff" dev
+1）--no-ff参数，表示禁用Fast forward，在merge时生成一个新的commit，分支历史上可以看出分支信息。
+
+分支管理基本原则：
+1）master分支应该非常稳定，仅用来发布新版本，平时不在上面干活；
+2）干活都在dev分支上，1.0版本发布时，再把dev分支合并到master上，在master分支发布1.0版本；
+
+____分支 Bug
+当前工作分支未完成，另一任务bug（假设代号101）需要新的分支解决：
+$ git stash
+1）可以把当前工作现场“储藏”起来，等以后恢复现场后继续工作
+$ git checkout master
+$ git checkout -b issue-101
+1）确定要在哪个分支上修复bug，假定需要在master分支上修复，就从master创建临时分支
+$ git add readme.txt 
+$ git commit -m "fix bug 101"
+$ git checkout master
+$ git merge --no-ff -m "merged bug fix 101" issue-101
+$ git branch -d issue-101
+1）修复bug，add、commit之后，切换到master分支，并完成合并，最后删除issue-101分支：
+$ git checkout dev
+1）修复bug之后切换原来分支继续工作
+$ git stash list
+1）查看刚才的工作现场
+$ git stash apply
+1）恢复现场，stash内容并不删除，需要git stash drop来删除
+$ git stash pop
+1）恢复同时，删除stash内容
+$ git stash apply stash@{0}
+1）可以多次stash，恢复的时候，先用git stash list查看，然后恢复指定的stash
+
+____分支 Feature
+再主分支基础上添加新分支，实现新功能
+$ git checkout -b feature-vulcan
+$ git add vulcan.py
+//$ git status
+$ git commit -m "add feature vulcan"
+$ git checkout dev      
+1）新分支实现新功能后准备合并
+$ git branch -d feature-vulcan
+error: The branch 'feature-vulcan' is not fully merged.
+If you are sure you want to delete it, run 'git branch -D feature-vulcan'.
+1）删除新分支失败
+$ git branch -D feature-vulcan
+Deleted branch feature-vulcan (was 756d4af).
+1）删除成功
+
+____分支 多人协作
+$ git remote
+$ git remote -v
+1）查看远程库的信息
+_推送分支
+$ git push origin *
+1）把*分支上的所有本地提交推送到远程库
+2）master分支要时刻与远程同步；开发分支也需要与远程同步；bug分支无需等；需要共享的分支则同步
+_抓取分支
+$ git clone git@github.com:michaelliao/learngit.git
+1）同伴克隆远程分支，只能看到本地的master分支
+$ git checkout -b dev origin/dev
+1）创建远程origin的dev分支到本地，在dev分支上开发
+$ git commit -m "add /usr/bin/env"
+$ git push origin dev
+1）dev上修改，时不时把dev分支push到远程
+$ git add hello.py 
+$ git commit -m "add coding: utf-8"
+$ git push origin dev
+1）碰巧你对同样的文件作了修改，并试图推送
+$ git pull
+1）把最新的提交从origin/dev抓下来，然后，在本地合并，解决冲突，再推送
+-----若失败(no tracking information：没有指定本地dev分支与远程origin/dev分支的链接):
+$ git branch --set-upstream dev origin/dev
+1）设置dev和origin/dev的链接
+$ git pull
+1）成功，但是合并有冲突，解决冲突后
+$ git commit -m "merge & fix hello.py"
+$ git push origin dev
+
+——Git 标签管理
+Git标签：版本库快照(容易记)，是指向某个commit的指针（但分支可移动，标签不可移动）
+____标签 创建
+$ git branch
+$ git checkout master
+1)切换到需要打标签的分支(这里设master)
+$ git tag v1.0
+1)打标签v1.0，存储在本地
+$ git tag
+1)查看所有标签(按字母顺序非时间)
+$ git log --pretty=oneline --abbrev-commit
+$ git tag v0.9 commit_id
+1)为历史某记录打标签
+$ git show v0.9
+//$ git tag -a v0.1 -m "version 0.1 released" 3628164
+1)查看标签信息
+2)-a指定标签名, -m指定说明文字
+$ git tag -s v0.2 -m "signed version 0.2 released" fec145a
+1)通过-s用私钥签名一个标签,采用PGP签名(首先安装gpg（GnuPG）)
+
+____标签 操作
+$ git tag -d v0.1
+1)本地标签的删除
+$ git push origin v1.0
+1)推送某个标签到远程
+$ git push origin --tags
+1)一次性推送全部尚未推送远程的本地标签
+$ git tag -d v0.9
+$ git push origin :refs/tags/v0.9
+1)删除远程标签
+
+——GitHub
+参与开源项目：
+1)访问它的项目主页，如：https://github.com/twbs/bootstrap
+2)点“Fork”,在自己账号下克隆了一个bootstrap仓库
+3)从自己的账号下clone：$ git clone git@github.com:xspkyw/bootstrap.git
+4)参与项目后向官方提交修改：在GitHub上发起一个pull request
